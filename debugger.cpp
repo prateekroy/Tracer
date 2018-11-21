@@ -1,21 +1,11 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/wait.h>
-#include "breakpoint.hpp"
 using namespace std;
 #include <sys/user.h>
 #include <map>
-
-// Utilities
-int atox(const char *s)
-{
-    int x= 0;
-    while (*s) {
-        x= x*16+(*s>'9'?(toupper(*s)-'A'+10):*s-'0');
-        s++;
-    }
-    return x;
-}
+#include "utilities.hpp"
+#include "breakpoint.hpp"
 
 void run_target(string prog)
 {
@@ -59,20 +49,24 @@ void run_debugger(int pid)
 	while(1)
 	{
 		cout << "\n>";
-		string breakaddr; cin >> breakaddr;
-		cout << breakaddr << endl;
-		int iaddr = atox(breakaddr.c_str());
-		if(iaddr == 0)break;		
-
-		if(iaddr == 1)
-		{
-			if(!continue_execution(pid))return;	
+		string command; 
+		std::getline(std::cin, command);
+		vector<string> elems;
+		split(command, ' ', std::back_inserter(elems));	
+		if(elems[0] == "break" || elems[0] == "b")
+		{	
+			// Save the original instruction data
+			int iaddr = atox(elems[1].c_str());
+		    originalInst[iaddr] = breakpoint::set_breakpoint(pid, iaddr);
 		}
+		else if(elems[0] == "cont" || elems[0] == "c")
+		{
+			if(!continue_execution(pid))return;
+		}		
 		else
 		{
-			// Save the original instruction data
-			originalInst[iaddr] = breakpoint::set_breakpoint(pid, iaddr);
-		}
+			return;
+		}	
 	}
 }
 
