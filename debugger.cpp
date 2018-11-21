@@ -3,6 +3,8 @@
 #include <sys/wait.h>
 #include "breakpoint.hpp"
 using namespace std;
+#include <sys/user.h>
+#include <map>
 
 // Utilities
 int atox(const char *s)
@@ -26,10 +28,35 @@ void run_target(string prog)
 	execl(prog.c_str(), prog.c_str(), NULL);
 }
 
+map<uint64_t, uint64_t> originalInst;
+bool continue_execution(int pid, breakpoint* bp)
+{
+	// Lets continue execution
+	ptrace(PTRACE_CONT, pid, 0, 0);
+	wait(NULL);
+	
+	struct user_regs_struct regs;
+	ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+
+	// Go back one instruction and write the original instruction
+	regs.rip -= 1;
+	printf("Break at : %llx , Continuing...\n", regs.rip);
+	if(originalInst.find(regs.rip) == originalInst.end())
+	{
+		cout << "No BreakPoint set after this exiting main \n";return false;
+	}
+	ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+
+	// Replace the original instruction
+	bp->unset_breakpoint(regs.rip, originalInst[regs.rip]);	
+	return true;
+}
+
 void run_debugger(int pid)
 {
 	wait(NULL);
-	
+
+	breakpoint* bp = new breakpoint();	
 	while(1)
 	{
 		cout << "\n>";
@@ -38,11 +65,17 @@ void run_debugger(int pid)
 		int iaddr = atox(breakaddr.c_str());
 		if(iaddr == 0)break;		
 
-		breakpoint bp(pid, iaddr);
-		bp.set_breakpoint();
-		cout << "Set breakpoint\n";
-		ptrace(PTRACE_CONT, pid, 0, 0);	
-		wait(NULL);
+		if(iaddr == 1)
+		{
+			if(!continue_execution(pid, bp))return;	
+		}
+		else
+		{
+			bp->pid = pid; bp->addr = iaddr;
+			bp->set_breakpoint();
+			// Save the original instruction data
+			originalInst[bp->addr] = bp->orig_data;
+		}
 	}
 }
 
