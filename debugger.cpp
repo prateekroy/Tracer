@@ -18,6 +18,14 @@ void run_target(string prog)
 	execl(prog.c_str(), prog.c_str(), NULL);
 }
 
+void printallregs(int pid)
+{
+	struct user_regs_struct regs;
+	ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+	printf(" rax : %llx, rbx : %llx, rcx : %llx, rdx : %llx, rsi : %llx, rdi : %llx, rip : %llx, rsp : %llx\n", regs.rax, regs.rbx, regs.rcx, regs.rdx, regs.rsi, regs.rdi, regs.rip, regs.rsp);
+	printf(" r8 : %llx, r9 : %llx, r10 : %llx, r11 : %llx, r12 : %llx, r13 : %llx, r14 : %llx, r15 : %llx\n", regs.r8, regs.r9, regs.r10, regs.r11, regs.r12, regs.r13, regs.r14, regs.r15);
+}
+
 map<uint64_t, uint64_t> originalInst;
 bool continue_execution(int pid)
 {
@@ -62,6 +70,10 @@ void run_debugger(int pid)
 		else if(elems[0] == "cont" || elems[0] == "c")
 		{
 			if(!continue_execution(pid))return;
+		}
+		else if(elems[0] == "printall" || elems[0] == "p")
+		{
+			printallregs(pid);
 		}		
 		else
 		{
