@@ -8,10 +8,10 @@ cont
 
 DONE :
 - able to break at multiple breakpoints based on address of instruction (objdump -d <executable>)
+- print all register contents after hitting a breakpoint
 
 TODO : 
 - add support to breakpoint at line number
 - add support to breakpoint by funtion name
-- print all register contents after hitting a breakpoint
 - delete a breakpoint
 - clear all breakpoint
