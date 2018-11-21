@@ -29,7 +29,7 @@ void run_target(string prog)
 }
 
 map<uint64_t, uint64_t> originalInst;
-bool continue_execution(int pid, breakpoint* bp)
+bool continue_execution(int pid)
 {
 	// Lets continue execution
 	ptrace(PTRACE_CONT, pid, 0, 0);
@@ -48,7 +48,7 @@ bool continue_execution(int pid, breakpoint* bp)
 	ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 
 	// Replace the original instruction
-	bp->unset_breakpoint(regs.rip, originalInst[regs.rip]);	
+	breakpoint::unset_breakpoint(pid, regs.rip, originalInst[regs.rip]);	
 	return true;
 }
 
@@ -56,7 +56,6 @@ void run_debugger(int pid)
 {
 	wait(NULL);
 
-	breakpoint* bp = new breakpoint();	
 	while(1)
 	{
 		cout << "\n>";
@@ -67,14 +66,12 @@ void run_debugger(int pid)
 
 		if(iaddr == 1)
 		{
-			if(!continue_execution(pid, bp))return;	
+			if(!continue_execution(pid))return;	
 		}
 		else
 		{
-			bp->pid = pid; bp->addr = iaddr;
-			bp->set_breakpoint();
 			// Save the original instruction data
-			originalInst[bp->addr] = bp->orig_data;
+			originalInst[iaddr] = breakpoint::set_breakpoint(pid, iaddr);
 		}
 	}
 }
