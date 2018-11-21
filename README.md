@@ -2,8 +2,8 @@
 Naive debugger to trace executables : Fully functional debugger for linux executables
 
 make\
-./run <executable-to-debug>\
-break <inst-address>\
+./run \<executable-to-debug> \
+break \<inst-address> \
 cont
 
 DONE :
